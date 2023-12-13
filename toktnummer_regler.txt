@@ -1,0 +1,40 @@
+Serie	Platform	Løpenummer	Fartøy
+000	99999	001-999	Diverse tokter (Tokt som enda ikke er tildelt fartøy)
+001	4174	001-999	G.O.Sars
+002	1019	001-999	Johan Hjort
+003	1026	001-999	G.M. Dannevig
+004	9387	001-999	Dr.Fridtjof Nansen
+005	9756	001-999	Prinsesse Ingrid Alexandra
+006	1172	001-999	Kristine Bonnevie
+007	9566	001-999	Kronprins Haakon
+008	2274	001-999	Hydrograf
+009	1170	001-999	Hans Brattstrøm
+010	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+011	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy	
+012	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+013	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+014	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+015	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+016	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+017	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+018	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+019	99999	001-999	Ledig serie – reservert fremtidige HI-fartøy
+200	9998	001-999	Statsraad Lehmkuhl
+201	1069	001-999	Fangst
+202	1173	001-999	Helmer Hansen
+203	3206	001-999	Vendla
+204	3317	001-999	Eros
+205	2886	001-999	Fiskebas
+206	3223	001-999	Kings Bay
+207	4405	001-999	Brennholm
+208	4165	001-999	Nystrøm
+209	1621	001-999	Stålbas
+210	4029	001-999	Vikingfjord
+211	9715	001-999	Brattholm
+212	9082	001-999	Havsund
+213	1998	001-999	Sandy
+214	10202	001-999	Arctic Aurora
+215	3371	001-999	Skulebas Senior
+216	9107	001-999	Fru Inger
+217	9698	001-999	Rind
+218	99999	001-999	Ledig serie – reservert fremtidige Leiefartøy
