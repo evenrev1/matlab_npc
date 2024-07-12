@@ -29,23 +29,27 @@ function mission = npc_merge_operations(mission)
 % reading matrices    : mission.INSTRUMENTTYPE_PARAMETERCODE
 % parameter metadata  : mission.INSTRUMENTTYPE_PARAMETERCODE_FIELDNAME
 %
-% For secondary etc. sensors, the number 2 etc. (i.e., the ordinal) is
+% For secondary etc. sensors, the number 2 etc. (i.e. the ordinal) is
 % appended directly to the PARAMETERCODE (e.g., mission.CTD_TEMP2).
 %
 % Uses NPC_MERGE_READINGS
 % See also NPC GETALLFIELDS EGETFIELD ISOFIX8601 FIELDNAMES
 
-% Last updated: Wed Dec 13 16:03:16 2023 by jan.even.oeie.nilsen@hi.no
+% This function requires hardcoding when data model of PhysChem changes!
+
+% Last updated: Thu Jul 11 12:52:22 2024 by jan.even.oeie.nilsen@hi.no
 
 % SETTINGS:
 % Fields not to be moved up into matrices:
-operationfields_to_omit  = {'instrument','featuretype'};
-instrumentfields_to_omit = {'instrumenttype','instrumentid','parameter','instrumentproperty'};
-parameterfields_to_omit  = {'parametercode','parameterid','ordinal','parameterproperty','reading','suppliedparametername','suppliedunits'};
+operationfields_to_omit  = {'id' 'instrument','featureType','operationProperty'};
+instrumentfields_to_omit = {'id' 'instrumentType','instrumentNumber','parameter','instrumentProperty'};
+parameterfields_to_omit  = {'id' 'parameterCode','parameterNumber','ordinal','parameterProperty','reading','suppliedParameterName','suppliedUnits'};
 % Interesting instrument- and parameterproperties:
-insprops   = {'profiledirection'};
+opeprops   = {''};
+opeproptyp = {''};
+insprops   = {'profileDirection'};
 insproptyp = {'STR'};
-parprops   = {'calibrationcoordinate','calibrationoffset','calibrationslope','referenceoffset','comment'};
+parprops   = {'calibrationCoordinate','calibrationOffset','calibrationSlope','referenceOffset','comment'};
 parproptyp = {'STR'                  ,'DEC'              ,'DEC'             ,'DEC'            ,'STR'    }; 
 
 % STANDARD FUNCTION CHECKS: 
@@ -60,7 +64,7 @@ nanvec = nans(1,ON);		% Base row vector to use in order to avoid zeros
 				% instead of NaNs as fillvalue.
 celvec = repmat({' '},1,ON);	% Base row cell to use in order to avoid double
 				% instead of ' ' as fillvalue.
-M=max(str2num(getallfields(mission,'sampleid'))); 
+M=max(str2num(getallfields(mission,'sampleNumber'))); 
 nanmat = nans(M,ON);		% Base matrix to use in order to avoid zeros
 				% instead of NANs as fillvalue, using the
 				% largest sampleid as general size. 
@@ -75,13 +79,13 @@ mission = npc_merge_readings(mission);
 for O=1:ON
 
   % Check that operation is profile:
-  if mission.operation{O}.featuretype~='4', continue; end % mandatory field
+  if mission.operation{O}.featureType~='4', continue; end % mandatory field
 
   % FILL THE OPERATION META:
 
   nam=fieldnames(mission.operation{O});				% The present fields
-  %nam=nam(~contains(nam,operationfields_to_omit));		% Reduce list to those to use
-  nam=setdiff(nam,operationfields_to_omit);		% Reduce list to those to use
+  hasproperty=any(contains(nam,'operationProperty')) && ~isempty(mission.operation{O}.operationProperty);	% Are there operationproperties?
+  nam=setdiff(nam,operationfields_to_omit);			% Reduce list to those to use
   [nam,~,i]=intersect(string(nam'),allOperationNam,'stable');	% Indices for valid names present now
   namtyp=allOperationNamTyp(i);					% The types of the valid, now present fields  
   
@@ -105,21 +109,38 @@ for O=1:ON
     eval(ans)
   end
 
-  
+      % Interesting operationproperties:
+    if hasproperty
+      tmp=mission.operation{O}.operationProperty;
+      for i=1:length(opeprops)
+	egetfield(tmp,'code',opeprops{i},'value');
+	if ~isempty(ans)
+	  fienam = [Iname,'_',upper(opeprops{i})];
+	  switch opeproptyp{i}
+	   case {'INT','DEC'}
+	    if ~isfield(mission,fienam), mission.(fienam) = nanvec; end % First time definition
+	    eval(['mission.',fienam,'(O) = ans;']);
+	   otherwise
+	    eval(['mission.',fienam,'(O) = ans'';']); % Just add char column vector
+	  end	    
+	end
+      end
+    end
+    
+
   
   %--------------------------------------------------------------------
 
   for I=1:length(mission.operation{O}.instrument)
     
     % First part of matrix names is instrumenttype:
-    Iname=mission.operation{O}.instrument{I}.instrumenttype;	% Always uppercase already
+    Iname=mission.operation{O}.instrument{I}.instrumentType;	% Always uppercase already
     
-    % FILL THE OPERATION META:
+    % FILL THE INSTRUMENT META:
     
     nam=fieldnames(mission.operation{O}.instrument{I});			% The present fields
-    hasproperty=any(contains(nam,'instrumentproperty'));		% Are there instrumentproperties?
-    %nam=nam(~contains(nam,instrumentfields_to_omit));			% Reduce list to those to use
-    nam=setdiff(nam,instrumentfields_to_omit);			% Reduce list to those to use
+    hasproperty=any(contains(nam,'instrumentProperty')) && ~isempty(mission.operation{O}.instrument{I}.instrumentProperty);	% Are there instrumentproperties?
+    nam=setdiff(nam,instrumentfields_to_omit);				% Reduce list to those to use
     [nam,~,i]=intersect(string(nam'),allInstrumentNam,'stable');	% Indices for valid names present now
     namtyp=allInstrumentNamTyp(i);					% The types of the valid, now present fields  
   
@@ -145,7 +166,7 @@ for O=1:ON
 
     % Interesting instrumentproperties:
     if hasproperty
-      tmp=mission.operation{O}.instrument{I}.instrumentproperty;
+      tmp=mission.operation{O}.instrument{I}.instrumentProperty;
       for i=1:length(insprops)
 	egetfield(tmp,'code',insprops{i},'value');
 	if ~isempty(ans)
@@ -167,19 +188,20 @@ for O=1:ON
     for P=1:length(mission.operation{O}.instrument{I}.parameter)
 
       % Second part of matrix name is parametercode (with ordinal if > 1):
-      try
-	ordinal=num2str(getfield(mission.operation{O}.instrument{I}.parameter{P},'ordinal'));
+      try % to see if ordinal field is missing (early version of PhysChem)
+	ordinal=getfield(mission.operation{O}.instrument{I}.parameter{P},'ordinal');
       catch
 	ordinal='';
       end
-      Pname = [mission.operation{O}.instrument{I}.parameter{P}.parametercode,ordinal];
+      % If it's 1 remove it, otherwise add it to matrix' parametername:
+      if ordinal<=1, ordinal=''; else ordinal=num2str(ordinal); end
+      Pname = [mission.operation{O}.instrument{I}.parameter{P}.parameterCode,ordinal];
 
-      % FILL THE OPERATION META:
+      % FILL THE PARAMETER META:
       
       nam=fieldnames(mission.operation{O}.instrument{I}.parameter{P});		% The present fields
-      hasproperty=any(contains(nam,'parameterproperty'));			% Are there parameterproperties?
-      %nam=nam(~contains(nam,parameterfields_to_omit));				% Reduce list to those to use
-      nam=setdiff(nam,parameterfields_to_omit);				% Reduce list to those to use
+      hasproperty=any(contains(nam,'parameterProperty')) && ~isempty(mission.operation{O}.instrument{I}.parameter{P}.parameterProperty);	% Are there parameterproperties?
+      nam=setdiff(nam,parameterfields_to_omit);					% Reduce list to those to use
       [nam,~,i]=intersect(string(nam'),allParameterNam,'stable');		% Indices for valid names present now and reduce to valid field names present
       namtyp=allParameterNamTyp(i);						% The types of the valid, now present fields  
 
@@ -205,7 +227,7 @@ for O=1:ON
 
       % Interesting parameterproperties:
       if hasproperty
-	tmp=mission.operation{O}.instrument{I}.parameter{P}.parameterproperty;
+	tmp=mission.operation{O}.instrument{I}.parameter{P}.parameterProperty;
 	for i=1:length(parprops)
 	  egetfield(tmp,'code',parprops{i},'value');
 	  if ~isempty(ans)
@@ -230,18 +252,16 @@ for O=1:ON
       r = mission.operation{O}.instrument{I}.parameter{P}.reading;
       
       % Change type of some parameters to fit in a matrix column:
-      %%r.sampleid = str2num(r.sampleid);					% sampleid is going to be used as indices  
-      %% [FIXED by forcing proper valuetype INT in NPC_VALIDATE_STRUCT]
       if  strcmp(Pname,'DATETIME'), r.value=isofix8601(r.value); end	% Need numeric column, using serial day
       
       % At first time use the full size NaN matrix as base, to avoid zero as fillvalue:
       if ~isfield(mission,[Iname,'_',Pname]), mission.([Iname,'_',Pname]) = nanmat; end % First time definition
       
       % Expand the matrix with the operation and fill at the correct places with sampleid:
-      eval(['mission.',Iname,'_',Pname,'(r.sampleid,O)=r.value;'])
+      eval(['mission.',Iname,'_',Pname,'(r.sampleNumber,O)=r.value;'])
       
       % Quality is always 1x1 and char:
-      eval(['mission.',Iname,'_',Pname,'_QC(r.sampleid,O)=r.quality;'])
+      eval(['mission.',Iname,'_',Pname,'_QC(r.sampleNumber,O)=r.quality;'])
 	
       % Remove the moved data:
       mission.operation{O}.instrument{I}.parameter{P}=rmfield(mission.operation{O}.instrument{I}.parameter{P},'reading');
@@ -263,8 +283,6 @@ for i=1:numel(fienam)
   
   if iscell(x)		% Rearrange the cells to char arrays
     
-    %%if i==166, keyboard; end
-    %%disp(int2str(i));
     x=pad(x);
     x=x';
     x=cell2mat(x);
@@ -276,8 +294,6 @@ for i=1:numel(fienam)
     [M,N]=size(x);
     if M>1
       x=rinsemat(x,1,'strip');
-      % strcat("mission.",fienam(i),"=rinsemat(mission.",fienam(i),",1,'strip');");
-      % eval(ans);
     end
   
   end

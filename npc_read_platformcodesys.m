@@ -3,7 +3,7 @@ function [content,msg,status] = npc_read_platformcodesys(platform,request,date)
 % 
 % [content,msg,status] = npc_read_platformcodesys(platform,request,date)
 % 
-% platform	= platform number
+% platform	= platform number (ie. code in platform-list)
 % request	= Name of codesys row, e.g.
 %		  'Ship name' or 'ITU Call Sign'.
 % date		= datestring in Physchem format, in order to grab the
@@ -21,7 +21,7 @@ function [content,msg,status] = npc_read_platformcodesys(platform,request,date)
 % Used by NPC_GET_MISSION NPC_VALIDATE_STRUCT 
 % See also NPC_INIT EDISP
 
-% Last updated: Wed Dec 13 10:15:01 2023 by jan.even.oeie.nilsen@hi.no
+% Last updated: Thu Jul 11 19:46:13 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(2,3,nargin));
 if nargin < 3 | isempty(date),	date=now;	end

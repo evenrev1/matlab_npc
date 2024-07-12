@@ -12,7 +12,7 @@ function tab = npc_squeeze_nmdreference(tabl)
 %
 % Used by NPC_READ_REFERENCE 
 
-% Last updated: Wed Dec 13 16:03:16 2023 by jan.even.oeie.nilsen@hi.no
+% Last updated: Thu Jul 11 19:28:53 2024 by jan.even.oeie.nilsen@hi.no
 
 % Prep the input:
 fieldnames(tabl);

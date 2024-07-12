@@ -9,9 +9,9 @@ function inst = npc_strip_readings(inst)
 %         any parameter field
 % 
 % Used by NPC_CHECK_PARAMETERS  
-% See also NPC 
+% See also RMFIELD 
 
-% Last updated: Wed Dec 13 16:03:16 2023 by jan.even.oeie.nilsen@hi.no
+% Last updated: Thu Jul 11 19:27:50 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(1,1,nargin));
 

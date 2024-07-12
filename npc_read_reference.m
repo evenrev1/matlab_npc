@@ -1,6 +1,6 @@
 function [content,msg,status] = npc_read_reference(tabl,code,colm,valu)
 % NPC_READ_REFERENCE	Reads info from reference lists
-% Works on both PhysChem Reference and NMDreference lists.
+% Works on both PhysChem Reference and NMDreference.
 % 
 % [content,msg,status] = npc_read_reference(tabl,code,colm,valu)
 % 
@@ -31,13 +31,9 @@ function [content,msg,status] = npc_read_reference(tabl,code,colm,valu)
 % Uses NPC_SQUEEZE_NMDREFERENCE
 % See also NPC_INIT NPC_READ_PLATFORMCODESYS
  
-% Last updated: Wed Dec 13 16:03:16 2023 by jan.even.oeie.nilsen@hi.no
+% Last updated: Thu Jul 11 19:38:30 2024 by jan.even.oeie.nilsen@hi.no
 
-physChemTables = [ "collectionType" "featureType" "instrumentPropertyType" ...
-		   "instrumentType" "method" "methodGroup" "operationType" ...
-		   "parameter" "parameterGroup" "parameterPropertyType" ...
-		   "processingLevel" "sensorOrientation" "suppliedParameter" ...
-		   "suppliedUnits" "valueType" ];
+load npc_init physChemTables
 
 error(nargchk(1,4,nargin));
 if nargin < 4 | isempty(valu),	valu='';	end
@@ -66,7 +62,6 @@ else
   physChem=false; ref='NMDreference'; 
 end
   
-
 % GET TABLE OR ROW:
 try						% Try if pre-read table can give the results 
   % Either table is direct input or read now:

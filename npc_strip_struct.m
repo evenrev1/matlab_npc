@@ -16,7 +16,7 @@ function mission=npc_strip_struct(mission,opt)
 % Used by NPC_WRITE_STRUCT
 % See also NPC_BUILD_STRUCT NPC_VALIDATE_STRUCT 
 
-% Last updated: Wed Dec 13 16:03:16 2023 by jan.even.oeie.nilsen@hi.no
+% Last updated: Thu Jul 11 20:14:30 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(1,2,nargin));
 if nargin < 2 | isempty(opt),	opt='';	end
@@ -28,24 +28,26 @@ if any(contains(opt,'hard'))
   % In this case, and for making input files, there are fields that can
   % be filled by the importer (i.e. Convert Job and Converter API), and
   % thus can be removed from struct. These are explicitly mentioned
-  % here.
-  removableMissionFields    = [ optionalMissionFields additionalMissionFields ...
-		    "missiontypename" "platformname" ];
-  removableOperationFields  = [ optionalOperationFields conditionOperationFields additionalOperationFields ...
-		    "operationnumber" "operationplatform" ...
-		    "timestartquality" "positionstartquality" ];
-  removableInstrumentFields = [ optionalInstrumentFields additionalInstrumentFields ...
-		   "instrumentid" ];
-  removableInstrumentPropertyFields = [ instrumentPropertyTypeCodes ];
-  removableParameterFields  = [ optionalParameterFields additionalParameterFields ...
-		    "parametercode" "ordinal" "units" "processinglevel" ];
-  removableParameterPropertyFields = [ parameterPropertyTypeCodes ];
-  removableReadingFields = [ optionalReadingFields additionalReadingFields ...
-		    "sampleid" "quality" ];
+  % here:
+  removableMissionFields		= [ optionalMissionFields additionalMissionFields ];
+  removableMissionPropertyFields	= [ missionPropertyTypeCodes ];
+  removableOperationFields		= [ optionalOperationFields conditionOperationFields additionalOperationFields ...
+					"operationNumber"  "timestartQuality" "positionStartQuality" ];
+  removableOperationPropertyFields	= [ operationPropertyTypeCodes ];
+  removableInstrumentFields		= [ optionalInstrumentFields additionalInstrumentFields ...
+					"instrumentNumber" ];
+  removableInstrumentPropertyFields	= [ instrumentPropertyTypeCodes ];
+  removableParameterFields		= [ optionalParameterFields additionalParameterFields ...
+					"parameterNumber" "ordinal" "processinglevel" ];
+  removableParameterPropertyFields	= [ parameterPropertyTypeCodes ];
+  removableReadingFields		= [ optionalReadingFields additionalReadingFields ...
+					"sampleNumber" "quality" ];
 else
   % Plain removal of the data model's optional fields and NPCs additional fields, if empty.
   removableMissionFields		= [ optionalMissionFields additionalMissionFields ];
+  removableMissionPropertyFields	= [ missionPropertyTypeCodes ];
   removableOperationFields		= [ optionalOperationFields conditionOperationFields additionalOperationFields ];
+  removableOperationPropertyFields	= [ operationPropertyTypeCodes ];
   removableInstrumentFields		= [ optionalInstrumentFields additionalInstrumentFields];
   removableInstrumentPropertyFields	= [ instrumentPropertyTypeCodes ];
   removableParameterFields		= [ optionalParameterFields additionalParameterFields ];
@@ -53,7 +55,20 @@ else
   removableReadingFields		= [ optionalReadingFields additionalReadingFields ];
 end
 
-% Remove the mission (top) level empty removable fields
+% MISSION LEVEL
+% Remove the missionProperty elements that have empty value:
+if isfield(mission,'missionProperty')
+  ii=true(1,length(mission.missionProperty));
+  for IP=1:length(ii)
+    fieldnames(mission.missionProperty(IP)); a=ans(contains(ans,'value'));
+    if isempty(mission.missionProperty(IP).(a{1}))
+      ii(IP)=false;
+    end
+  end % missionproperties
+  mission.missionProperty = mission.missionProperty(ii);
+end % isfield
+
+% Now remove the mission (top) level empty removable fields:
 fieldnames(mission); a=ans(contains(ans,removableMissionFields));
 for i=1:length(a)
   if isempty(getfield(mission,a{i}))
@@ -61,8 +76,22 @@ for i=1:length(a)
   end
 end
 
-% Remove the operation level empty removable fields
+% OPERATION LEVEL
 for O=1:length(mission.operation)
+
+  % Remove the operationProperty elements that have empty value:
+  if isfield(mission.operation{O},'operationProperty')
+    ii=true(1,length(mission.operation{O}.operationProperty));
+    for IP=1:length(ii)
+      fieldnames(mission.operation{O}.operationProperty(IP)); a=ans(contains(ans,'value'));
+      if isempty(mission.operation{O}.operationProperty(IP).(a{1}))
+	ii(IP)=false;
+      end
+    end % operationproperties
+    mission.operation{O}.operationProperty = mission.operation{O}.operationProperty(ii);
+  end % isfield
+  
+  % Now remove the operation level empty removable fields:
   fieldnames(mission.operation{O}); a=ans(contains(ans,removableOperationFields));
   for i=1:length(a)
     if isempty(getfield(mission.operation{O},a{i}))
@@ -73,16 +102,16 @@ for O=1:length(mission.operation)
   % INSTRUMENT LEVEL
   for I=1:length(mission.operation{O}.instrument)
 
-    % Remove the instrumentproperty elements that have empty value:
-    if isfield(mission.operation{O}.instrument{I},'instrumentproperty')
-      ii=true(1,length(mission.operation{O}.instrument{I}.instrumentproperty));
+    % Remove the instrumentProperty elements that have empty value:
+    if isfield(mission.operation{O}.instrument{I},'instrumentProperty')
+      ii=true(1,length(mission.operation{O}.instrument{I}.instrumentProperty));
       for IP=1:length(ii)
-	fieldnames(mission.operation{O}.instrument{I}.instrumentproperty(IP)); a=ans(contains(ans,'value'));
-	if isempty(mission.operation{O}.instrument{I}.instrumentproperty(IP).(a{1}))
+	fieldnames(mission.operation{O}.instrument{I}.instrumentProperty(IP)); a=ans(contains(ans,'value'));
+	if isempty(mission.operation{O}.instrument{I}.instrumentProperty(IP).(a{1}))
 	  ii(IP)=false;
 	end
       end % instrumentproperties
-      mission.operation{O}.instrument{I}.instrumentproperty = mission.operation{O}.instrument{I}.instrumentproperty(ii);
+      mission.operation{O}.instrument{I}.instrumentProperty = mission.operation{O}.instrument{I}.instrumentProperty(ii);
     end % isfield
     
     % Now remove the instrument level empty removable fields:
@@ -96,16 +125,16 @@ for O=1:length(mission.operation)
     % PARAMETER LEVEL
     for P=1:length(mission.operation{O}.instrument{I}.parameter)
 
-      % Remove the parameterproperty elements that have empty value:
-      if isfield(mission.operation{O}.instrument{I}.parameter{P},'parameterproperty')
-	ii=true(1,length(mission.operation{O}.instrument{I}.parameter{P}.parameterproperty));
+      % Remove the parameterProperty elements that have empty value:
+      if isfield(mission.operation{O}.instrument{I}.parameter{P},'parameterProperty')
+	ii=true(1,length(mission.operation{O}.instrument{I}.parameter{P}.parameterProperty));
 	for PP=1:length(ii)
-	  fieldnames(mission.operation{O}.instrument{I}.parameter{P}.parameterproperty(PP)); a=ans(contains(ans,'value'));
-	  if isempty(mission.operation{O}.instrument{I}.parameter{P}.parameterproperty(PP).(a{1}))
+	  fieldnames(mission.operation{O}.instrument{I}.parameter{P}.parameterProperty(PP)); a=ans(contains(ans,'value'));
+	  if isempty(mission.operation{O}.instrument{I}.parameter{P}.parameterProperty(PP).(a{1}))
 	    ii(PP)=false;
 	  end
 	end % parameterproperties
-	mission.operation{O}.instrument{I}.parameter{P}.parameterproperty = mission.operation{O}.instrument{I}.parameter{P}.parameterproperty(ii);
+	mission.operation{O}.instrument{I}.parameter{P}.parameterProperty = mission.operation{O}.instrument{I}.parameter{P}.parameterProperty(ii);
       end % isfield
       
       % Now remove the parameter level empty removable fields (including parameterproperties):

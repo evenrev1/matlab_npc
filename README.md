@@ -1,6 +1,6 @@
-# NMDphysChem (NPC) Matlab toolbox v0.9
- A toolbox to handle data for and from NMDphyschem, by Jan Even Øie Nilsen. 
- Last updated: Wed Dec 13 17:42:36 2023 by jan.even.oeie.nilsen@hi.no
+# NMDphysChem (NPC) Matlab toolbox v1.0
+ A toolbox to handle data for and from NMDphyschem, By Jan Even Øie Nilsen. 
+ Last updated: Thu Jul 11 20:18:20 2024 by jan.even.oeie.nilsen@hi.no
 
  Info and initialization:
 
@@ -14,6 +14,7 @@
           npc_validate_struct - Validates an NPC struct
          npc_merge_operations - Makes matrices of data from NPC struct
 
+         npc_make_startscript - Makes a template script for import of data
              npc_build_struct - Builds a struct with fields for NMDphyschem
              npc_set_property - Sets property value for NMDphyschem
              npc_strip_struct - Strips NPC struct of empty fields
@@ -31,6 +32,7 @@
       npc_localmerge_readings - Merges reading fields of a parameter
      npc_squeeze_nmdreference - Reorganizes table from NMDreference
            npc_strip_readings - Strips reading fields from instrument struct
+            npc_make_filename - Define filename by mission content
 
  Metadata storage:
 
@@ -39,8 +41,8 @@
 
  Required toolboxes: 
 
-	[https://github.com/evenrev1/evenmat.git](https://github.com/evenrev1/evenmat.git) (e.g. for GETALLFIELDS,
-	EFIELDNAMES, EGETFIELD, VALUETYPE, ISOFIX8601).
+	[https://github.com/evenrev1/evenmat.git](https://github.com/evenrev1/evenmat.git) (e.g., for
+	GETALLFIELDS, EFIELDNAMES, EGETFIELD, VALUETYPE, ISOFIX8601).
 
  NMDphyschem documentation: 
  

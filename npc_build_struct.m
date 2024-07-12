@@ -1,9 +1,9 @@
-function mission = npc_build_struct(npars,ninst,noper,scope)
+function mission = npc_build_struct(npars,ninst,noper,scope,API)
 % NPC_BUILD_STRUCT	Builds a struct with fields for NMDphyschem
 % Outputs a valid structure object with empty fields for metadata and
 % data input to NMDphyschem.
 % 
-% mission = npc_build_struct(npars,ninst,noper,scope)
+% mission = npc_build_struct(npars,ninst,noper,scope,API)
 % 
 % npars	= number of parameters expected (default=2).
 % ninst	= number of instruments expected (default=1).
@@ -15,6 +15,10 @@ function mission = npc_build_struct(npars,ninst,noper,scope)
 %		'conditions' fields as well,
 %		'properties' fields as well, and
 %		'additional' fields in addition (default).
+% API	= logical to be set to true if making mission struct to be
+%         POSTED directly to the PhysChem API (not recommendable and
+%         likely not allowed either, though). This affects which
+%         elements can be considered mandatory. (default=false)  
 %
 % mission	= output structure for NMDphyschem.
 %
@@ -32,32 +36,35 @@ function mission = npc_build_struct(npars,ninst,noper,scope)
 % 
 % Notes:
 %
-% 'missionnumber' key is needed here since it is the upper level, but
+% 'missionNumber' key is needed here since it is the upper level, but
 %	may be reassigned by NMDphyschem system.
-% 'missiontypename' and 'platformname' are mission fields to be assigned 
+% 'missionTypeName' and 'platformName' are mission fields to be assigned 
 %	by the NMDphyschem system or other functions in this library 
 %	by quiery to the NDMreference API.
-% 'operationnumber' key is assigned by NMDphyschem system and will
+% 'operationNumber' key is assigned by NMDphyschem system and will
 %	just be numbering of structure fields here. 
-% 'instrumentid' key is assigned by NMDphyschem system and will just
-%	be numbering of structure fields here. 
-% 'instrumenttype' is not a key, but a most crucial mandatory field.
-% 'parametercode' and 'units' are parameter fields to be assigned 
+% 'instrumentNumber' key is assigned by NMDphyschem system and will
+%	just be numbering of structure fields here. 
+% 'instrumentType' is not a key, but a most crucial mandatory field.
+% 'parameterCode' and 'units' are parameter fields to be assigned 
 %	by the NMDphyschem system or other functions in this library 
 %	by quiery to the Physchem Reference API.
-% 'n' is not valid for NMDphyschem, but temporarily used as reading 
-%	field in this library for sample-size csv output.
-%	Other additional fields include names explaining many of the
-%	codes, in an effort to make files FAIR. 
 % 'reading' in the data model has only one value each, but here we
 %	use vectors. 
+% Additional fields are added, such as names explaining many of the
+%	codes, in an effort to make files FAIR. 
 %
+% Used by NPC_MAKE_STARTSCRIPT
 % Uses NPC_INIT
 % See also NPC NPC_STRIP_STRUCT NPC_VALIDATE_STRUCT
 
-% Last updated: Wed Dec 13 11:05:10 2023 by jan.even.oeie.nilsen@hi.no
+% This function should not require hardcoding when data model of
+% PhysChem changes!
 
-error(nargchk(0,4,nargin));
+% Last updated: Fri Jul 12 15:41:53 2024 by jan.even.oeie.nilsen@hi.no
+
+error(nargchk(0,5,nargin));
+if nargin < 5 | isempty(API),	API=false;		end
 if nargin < 4 | isempty(scope),	scope='additional';	end
 if nargin < 3 | isempty(noper),	noper=1;		end
 if nargin < 2 | isempty(ninst),	ninst=1;		end
@@ -66,83 +73,193 @@ if nargin < 1 | isempty(npars),	npars=2;		end
 % Load valid fieldnames, etc.
 load npc_init
 
+% Activate switches for what is mandatory:
+if API % mission from PhysChem DB or planned to be posted to API:
+  mandatoryMissionFields	= exportMandatoryMissionFields    ;
+  mandatoryMissionFieldTypes	= exportMandatoryMissionFieldTypes    ;
+  mandatoryOperationFields	= exportMandatoryOperationFields  ;
+  mandatoryOperationFieldTypes	= exportMandatoryOperationFieldTypes  ;
+  mandatoryInstrumentFields	= exportMandatoryInstrumentFields ;
+  mandatoryInstrumentFieldTypes	= exportMandatoryInstrumentFieldTypes ;
+  mandatoryParameterFields	= exportMandatoryParameterFields  ;
+  mandatoryParameterFieldTypes	= exportMandatoryParameterFieldTypes  ;
+  mandatoryReadingFields	= exportMandatoryReadingFields    ;
+  mandatoryReadingFieldTypes	= exportMandatoryReadingFieldTypes    ;
+else % mission from from various instrumentation on the outside (some DB-internal fields cannot be demanded): 
+  mandatoryMissionFields	= importMandatoryMissionFields    ;
+  mandatoryMissionFieldTypes    = importMandatoryMissionFieldTypes    ;
+  mandatoryOperationFields	= importMandatoryOperationFields  ;
+  mandatoryOperationFieldTypes  = importMandatoryOperationFieldTypes  ;
+  mandatoryInstrumentFields	= importMandatoryInstrumentFields ;
+  mandatoryInstrumentFieldTypes = importMandatoryInstrumentFieldTypes ;
+  mandatoryParameterFields	= importMandatoryParameterFields  ;
+  mandatoryParameterFieldTypes  = importMandatoryParameterFieldTypes  ;
+  mandatoryReadingFields	= importMandatoryReadingFields    ;
+  mandatoryReadingFieldTypes    = importMandatoryReadingFieldTypes    ;
+end
+
 % Decide selection of fieldnames to use:
 switch scope
  case 'mandatory'
-  Mf=cellstr([mandatoryMissionFields   ]);
-  Of=cellstr([mandatoryOperationFields ]);
-  If=cellstr([mandatoryInstrumentFields]);
-  IPf=cellstr([]);
-  IPVf=cellstr([]);
-  Pf=cellstr([mandatoryParameterFields ]);
-  PPf=cellstr([]);
-  PPVf=cellstr([]);
-  Rf=cellstr([mandatoryReadingFields   ]);
+  Mf  =cellstr([mandatoryMissionFields ]);
+  MfV =cellstr([mandatoryMissionFieldTypes ]);
+  MPf =cellstr([""]);
+  MPfV=cellstr([""]);
+  Of  =cellstr([mandatoryOperationFields ]);
+  OfV =cellstr([mandatoryOperationFieldTypes ]);
+  OPf =cellstr([""]);
+  OPfV=cellstr([""]);
+  If  =cellstr([mandatoryInstrumentFields ]);
+  IfV =cellstr([mandatoryInstrumentFieldTypes ]);
+  IPf =cellstr([""]);
+  IPfV=cellstr([""]);
+  Pf  =cellstr([mandatoryParameterFields ]);
+  PfV =cellstr([mandatoryParameterFieldTypes ]);
+  PPf =cellstr([""]);
+  PPfV=cellstr([""]);
+  Rf  =cellstr([mandatoryReadingFields ]);
+  RfV =cellstr([mandatoryReadingFieldTypes ]);
  case 'optional'
-  Mf=cellstr([mandatoryMissionFields   ,optionalMissionFields   ]);
-  Of=cellstr([mandatoryOperationFields ,optionalOperationFields ]);
-  If=cellstr([mandatoryInstrumentFields,optionalInstrumentFields]);
-  IPf=cellstr([]);
-  IPVf=cellstr([]);
-  Pf=cellstr([mandatoryParameterFields ,optionalParameterFields ]);
-  PPf=cellstr([]);
-  PPVf=cellstr([]);
-  Rf=cellstr([mandatoryReadingFields   ,optionalReadingFields   ]);
+  Mf  =cellstr([mandatoryMissionFields		,optionalMissionFields ]);
+  MfV =cellstr([mandatoryMissionFieldTypes	,optionalMissionFieldTypes ]);
+  MPf =cellstr([""]);
+  MPfV=cellstr([""]);
+  Of  =cellstr([mandatoryOperationFields	,optionalOperationFields ]);
+  OfV =cellstr([mandatoryOperationFieldTypes	,optionalOperationFieldTypes ]);
+  OPf =cellstr([""]);
+  OPfV=cellstr([""]);
+  If  =cellstr([mandatoryInstrumentFields	,optionalInstrumentFields ]);
+  IfV =cellstr([mandatoryInstrumentFieldTypes	,optionalInstrumentFieldTypes ]);
+  IPf =cellstr([""]);
+  IPfV=cellstr([""]);
+  Pf  =cellstr([mandatoryParameterFields	,optionalParameterFields ]);
+  PfV =cellstr([mandatoryParameterFieldTypes	,optionalParameterFieldTypes ]);
+  PPf =cellstr([""]);
+  PPfV=cellstr([""]);
+  Rf  =cellstr([mandatoryReadingFields		,optionalReadingFields ]);
+  RfV =cellstr([mandatoryReadingFieldTypes	,optionalReadingFieldTypes ]);
  case 'conditions'
-  Mf=cellstr([mandatoryMissionFields   ,optionalMissionFields   ]);
-  Of=cellstr([mandatoryOperationFields ,optionalOperationFields ,conditionOperationFields ]);
-  If=cellstr([mandatoryInstrumentFields,optionalInstrumentFields]);
-  IPf=cellstr([]);
-  IPVf=cellstr([]);
-  Pf=cellstr([mandatoryParameterFields ,optionalParameterFields ]);
-  PPf=cellstr([]);
-  PPVf=cellstr([]);
-  Rf=cellstr([mandatoryReadingFields   ,optionalReadingFields   ]);
+  Mf  =cellstr([mandatoryMissionFields		,optionalMissionFields ]);
+  MfV =cellstr([mandatoryMissionFieldTypes	,optionalMissionFieldTypes ]);
+  MPf =cellstr([""]);
+  MPfV=cellstr([""]);
+  Of  =cellstr([mandatoryOperationFields	,optionalOperationFields	,conditionOperationFields ]);
+  OfV =cellstr([mandatoryOperationFieldTypes	,optionalOperationFieldTypes	,conditionOperationFieldTypes ]);
+  OPf =cellstr([""]);
+  OPfV=cellstr([""]);
+  If  =cellstr([mandatoryInstrumentFields	,optionalInstrumentFields ]);
+  IfV =cellstr([mandatoryInstrumentFieldTypes	,optionalInstrumentFieldTypes ]);
+  IPf =cellstr([""]);
+  IPfV=cellstr([""]);
+  Pf  =cellstr([mandatoryParameterFields	,optionalParameterFields ]);
+  PfV =cellstr([mandatoryParameterFieldTypes	,optionalParameterFieldTypes ]);
+  PPf =cellstr([""]);
+  PPfV=cellstr([""]);
+  Rf  =cellstr([mandatoryReadingFields		,optionalReadingFields ]);
+  RfV =cellstr([mandatoryReadingFieldTypes	,optionalReadingFieldTypes ]);
  case 'properties'
-  Mf=cellstr([mandatoryMissionFields   ,optionalMissionFields   ]);
-  Of=cellstr([mandatoryOperationFields ,optionalOperationFields ,conditionOperationFields  ]);
-  If=cellstr([mandatoryInstrumentFields,optionalInstrumentFields]);
-  IPf=cellstr([instrumentPropertyTypeCodes]);
-  IPVf=cellstr([instrumentPropertyTypeValueTypes]);
-  Pf=cellstr([mandatoryParameterFields ,optionalParameterFields ]);
-  PPf=cellstr([parameterPropertyTypeCodes]);
-  PPVf=cellstr([parameterPropertyTypeValueTypes]);
-  Rf=cellstr([mandatoryReadingFields   ,optionalReadingFields   ]);
+  Mf  =cellstr([mandatoryMissionFields		,optionalMissionFields ]);
+  MfV =cellstr([mandatoryMissionFieldTypes	,optionalMissionFieldTypes ]);
+  MPf =cellstr([missionPropertyTypeCodes ]);
+  MPfV=cellstr([missionPropertyTypeValueTypes ]);
+  Of  =cellstr([mandatoryOperationFields	,optionalOperationFields	,conditionOperationFields ]);
+  OfV =cellstr([mandatoryOperationFieldTypes	,optionalOperationFieldTypes	,conditionOperationFieldTypes ]);
+  OPf =cellstr([operationPropertyTypeCodes ]);
+  OPfV=cellstr([operationPropertyTypeValueTypes ]);
+  If  =cellstr([mandatoryInstrumentFields	,optionalInstrumentFields ]);
+  IfV =cellstr([mandatoryInstrumentFieldTypes	,optionalInstrumentFieldTypes ]);
+  IPf =cellstr([instrumentPropertyTypeCodes ]);
+  IPfV=cellstr([instrumentPropertyTypeValueTypes ]);
+  Pf  =cellstr([mandatoryParameterFields	,optionalParameterFields ]);
+  PfV =cellstr([mandatoryParameterFieldTypes	,optionalParameterFieldTypes ]);
+  PPf =cellstr([parameterPropertyTypeCodes ]);
+  PPfV=cellstr([parameterPropertyTypeValueTypes ]);
+  Rf  =cellstr([mandatoryReadingFields		,optionalReadingFields ]);
+  RfV =cellstr([mandatoryReadingFieldTypes	,optionalReadingFieldTypes ]);
  case 'additional'
-  Mf=cellstr([mandatoryMissionFields   ,optionalMissionFields   ,additionalMissionFields   ]);
-  Of=cellstr([mandatoryOperationFields ,optionalOperationFields ,conditionOperationFields ,additionalOperationFields ]);
-  If=cellstr([mandatoryInstrumentFields,optionalInstrumentFields,additionalInstrumentFields]);
-  IPf=cellstr([instrumentPropertyTypeCodes]);
-  IPVf=cellstr([instrumentPropertyTypeValueTypes]);
-  Pf=cellstr([mandatoryParameterFields ,optionalParameterFields ,additionalParameterFields ]);
-  PPf=cellstr([parameterPropertyTypeCodes]);
-  PPVf=cellstr([parameterPropertyTypeValueTypes]);
-  Rf=cellstr([mandatoryReadingFields   ,optionalReadingFields   ,additionalReadingFields   ]);
+  Mf  =cellstr([mandatoryMissionFields		,optionalMissionFields						,additionalMissionFields ]);
+  MfV =cellstr([mandatoryMissionFieldTypes	,optionalMissionFieldTypes					,additionalMissionFieldTypes ]);
+  MPf =cellstr([missionPropertyTypeCodes ]);
+  MPfV=cellstr([missionPropertyTypeValueTypes ]);
+  Of  =cellstr([mandatoryOperationFields	,optionalOperationFields	,conditionOperationFields	,additionalOperationFields ]);
+  OfV =cellstr([mandatoryOperationFieldTypes	,optionalOperationFieldTypes	,conditionOperationFieldTypes	,additionalOperationFieldTypes ]);
+  OPf =cellstr([operationPropertyTypeCodes ]);
+  OPfV=cellstr([operationPropertyTypeValueTypes ]);
+  If  =cellstr([mandatoryInstrumentFields	,optionalInstrumentFields					,additionalInstrumentFields ]);
+  IfV =cellstr([mandatoryInstrumentFieldTypes	,optionalInstrumentFieldTypes					,additionalInstrumentFieldTypes ]);
+  IPf =cellstr([instrumentPropertyTypeCodes]);
+  IPfV=cellstr([instrumentPropertyTypeValueTypes]);
+  Pf  =cellstr([mandatoryParameterFields	,optionalParameterFields					,additionalParameterFields ]);
+  PfV =cellstr([mandatoryParameterFieldTypes	,optionalParameterFieldTypes					,additionalParameterFieldTypes ]);
+  PPf =cellstr([parameterPropertyTypeCodes]);
+  PPfV=cellstr([parameterPropertyTypeValueTypes]);
+  Rf  =cellstr([mandatoryReadingFields		,optionalReadingFields						,additionalReadingFields ]);
+  RfV =cellstr([mandatoryReadingFieldTypes	,optionalReadingFieldTypes					,additionalReadingFieldTypes ]);
 otherwise
   error('Invalid ''scope'' input!');
 end
+% Remove empty entries (e.g., from levels without additional Fields):
+igno={''};
+[Mf,IA]=setdiff(Mf,igno,'stable'); MfV(IA);
+[MPf,IA]=setdiff(MPf,igno,'stable'); MPfV(IA);
+[Of,IA]=setdiff(Of,igno,'stable'); OfV(IA);
+[OPf,IA]=setdiff(OPf,igno,'stable'); OPfV(IA);
+[If,IA]=setdiff(If,igno,'stable'); IfV(IA);
+[IPf,IA]=setdiff(IPf,igno,'stable'); IPfV(IA);
+[Pf,IA]=setdiff(Pf,igno,'stable'); PfV(IA);
+[PPf,IA]=setdiff(PPf,igno,'stable'); PPfV(IA);
+[Rf,IA]=setdiff(Rf,igno,'stable'); RfV(IA);
 
-% BUILD A VALID STRUCTURE:
-parameter=cell2struct(cellstr(repmat("",1,length(Pf))),Pf,2);		% Create a parameter structure with parameter metadata fields
+
+% ------- Build a valid structure: -----------------------------------
+
+% PARAMETER LEVEL:
+parameter=cell2struct(cellstr(repmat("",1,length(Pf))),Pf,2);		% Create a parameter structure with metadata fields
+for i=1:numel(Pf)
+  parameter.(Pf{i})=valuetype(parameter.(Pf{i}),PfV{i});		% Set correct valuetypes on parameterfields
+end
+for i=1:length(PPf)								
+  parameter.parameterProperty(i,1).code=PPf{i};				% Add the parameterproperties to parameter
+  parameter.parameterProperty(i,1).value=valuetype('',PPfV{i});		% Set correct valuetypes to parameterproperties
+end
+
+% READING LEVEL:
 parameter.reading=cell2struct(cellstr(repmat("",1,length(Rf))),Rf,2);	% Add reading metadata fields to it
-
-for i=1:length(PPf)							% Then add the parameterproperties to parameter:
-  parameter.parameterproperty(i,1).code=PPf{i};				
-  parameter.parameterproperty(i,1).value=valuetype('',PPVf{i});
+for i=1:numel(Rf)
+  parameter.reading.(Rf{i})=valuetype(parameter.reading.(Rf{i}),RfV{i});% Set correct valuetypes on readingfields
 end
 
-instrument=cell2struct(cellstr(repmat("",1,length(If))),If,2);		% Create instrument with metadata fields
-instrument.parameter=repmat({parameter},npars,1);			% Then add as many parameters as you need, to instrument
-
-for i=1:length(IPf)							% Then add the instrumentproperties to instrument
-  instrument.instrumentproperty(i,1).code=IPf{i};				
-  instrument.instrumentproperty(i,1).value=valuetype('',IPVf{i});				
+% INSTRUMENT LEVEL:
+instrument=cell2struct(cellstr(repmat("",1,length(If))),If,2);		% Create instrument structure with metadata fields
+for i=1:numel(If)
+  instrument.(If{i})=valuetype(instrument.(If{i}),IfV{i});		% Set correct valuetypes on instrumentfields
 end
+for i=1:length(IPf)
+  instrument.instrumentProperty(i,1).code=IPf{i};			% Add the instrumentproperties to instrument				
+  instrument.instrumentProperty(i,1).value=valuetype('',IPfV{i});	% Set correct valuetypes to instrumentproperties
+end
+instrument.parameter=repmat({parameter},npars,1);			% Add as many parameters as you need, to instrument
 
+% OPERATION LEVEL:
 operation=cell2struct(cellstr(repmat("",1,length(Of))),Of,2);		% Create operation with metadata fields
-operation.instrument=repmat({instrument},ninst,1);			% Then add as many instruments as you need, to operation
+for i=1:numel(Of)
+  operation.(Of{i})=valuetype(operation.(Of{i}),OfV{i});		% Set correct valuetypes on operationfields
+end
+for i=1:length(OPf)
+  operation.operationProperty(i,1).code=OPf{i};				% Add the operationproperties to operation				
+  operation.operationProperty(i,1).value=valuetype('',OPfV{i});		% Set correct valuetypes to operationproperties
+end
+operation.instrument=repmat({instrument},ninst,1);			% Add as many instruments as you need, to operation
 
+% MISSION LEVEL:
 mission=cell2struct(cellstr(repmat("",1,length(Mf))),Mf,2);		% Create mission with metadata fields
-mission.operation=repmat({operation},noper,1);				% Then add as many operations as you need, to mission
+for i=1:numel(Mf)
+  mission.(Mf{i})=valuetype(mission.(Mf{i}),MfV{i});		% Set correct valuetypes on missionfields
+end
+for i=1:length(MPf)
+  mission.missionProperty(i,1).code=MPf{i};				% Add the missionproperties to mission				
+  mission.missionProperty(i,1).value=valuetype('',MPfV{i});		% Set correct valuetypes to missionproperties
+end
+mission.operation=repmat({operation},noper,1);				% Add as many operations as you need, to mission
 
 

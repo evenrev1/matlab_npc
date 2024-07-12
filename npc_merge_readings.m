@@ -5,31 +5,33 @@ function mission = npc_merge_readings(mission,sortcode)
 % mission = npc_merge_readings(mission)
 % 
 % mission	= input struct with NPC format.
-% sortcode	= valid parametercode with which to sort readings if 
-%		  sampleid is not present, e.g. 'PRES' (default),
+% sortcode	= valid parameterCode with which to sort readings if 
+%		  sampleNumber is not present, e.g. 'PRES' (default),
 %		  'DEPTH', 'DATETIME', 'LOG', etc.
 %
 % mission	= output is an altered struct where all reading
 %		  fields for each parameter has been merged into
 %		  one reading field with vectors.
 %
-% If sampleid is missing (as is usual for import of external data),
-% sampleid will be made as simple index vectors. It is thus possible to
-% use this function to add sampleids to data.
+% If sampleNumber is missing (as is usual for import of external data),
+% sampleNumber will be made as simple index vectors. It is thus possible
+% to use this function to add sampleNumber to data.
 % 
-% All vectors will be sorted according to 'sampleid' if it exists. 
+% All vectors will be sorted according to 'sampleNumber' if it exists.
 %
 % Character fields will be merged into character arrays of height
-% according to the number of readings and width according to the
-% largest character (i.e. largest number of digits).
+% according to the number of readings and width according to the largest
+% character (i.e. largest number of digits).
 %
 % Used by NPC_MERGE_OPERATIONS NPC_WRITE_STRUCT
 % Uses NPC_LOCALMERGE_READINGS
 % See also NPC GETALLFIELDS FIELDNAMES
 
-% Last updated: Wed Dec 13 11:17:59 2023 by jan.even.oeie.nilsen@hi.no
+% This function requires hardcoding when data model of PhysChem changes!
 
-% [] possibly make some sorting options before making the sampleid here.
+% Last updated: Thu Jul 11 14:47:13 2024 by jan.even.oeie.nilsen@hi.no
+
+% [] possibly make some sorting options before making the sampleNumber here.
 
 error(nargchk(1,2,nargin));
 if nargin < 2 || isempty(sortcode), sortcode = 'PRES'; end
@@ -47,12 +49,12 @@ for O=1:ON
     end
     
     % Now that all parameters of the instrument are merged, assign
-    % sampleids according to sortcode parameter values, if none exists
-    % for this instrument. No need to use getallfields in this case,
-    % and it won't work since sampleid fields are vectors. String searching
+    % sampleNumber according to sortcode parameter values, if none exists
+    % for this instrument. No need to use GETALLFIELDS in this case,
+    % and it won't work since sampleNumber fields are vectors. String searching
     % in jsonencoded struct for the occurence of a fieldname is much faster.
-    if ~any(findstr(jsonencode(mission.operation{O}.instrument{I}),'sampleid')) 
-      pars=strip(string(getallfields(mission.operation{O}.instrument{I},'parametercode')));
+    if ~any(findstr(jsonencode(mission.operation{O}.instrument{I}),'sampleNumber')) 
+      pars=strip(string(getallfields(mission.operation{O}.instrument{I},'parameterCode')));
       j=find(ismember(pars,sortcode)); 
       if any(j), j=j(1);
 	[~,IA]=sort(mission.operation{O}.instrument{I}.parameter{j}.reading.value);
@@ -67,5 +69,6 @@ for O=1:ON
     
   end
 end  
+
 
 
