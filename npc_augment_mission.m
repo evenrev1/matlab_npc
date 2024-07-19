@@ -43,7 +43,7 @@ function [mission,change] = npc_augment_mission(oldmission,newmission,rules,levl
 %
 % See also ISEQUALN GETALLFIELDS
 
-% Last updated: Thu Jul 11 20:43:36 2024 by jan.even.oeie.nilsen@hi.no
+% Last updated: Fri Jul 19 11:06:16 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(2,4,nargin));
 if isempty(oldmission),	edisp('NPC_VALIDATE_STRUCT : Empty input!',4,4); return;	end
@@ -216,10 +216,10 @@ elseif NEWREADING
   for Pi=1:numel(mission.operation{end}.instrument{1}.parameter)
     % Find out how many readings there already are in the old mission struct
     j = numel(mission.operation{end}.instrument{1}.parameter{Pi}.reading)+1;
-    % Add the new readings, using j both as index and sampleid value:
+    % Add the new readings, using j both as index and sampleNumber value:
     % [] Assuming only one reading in newmission.
     mission.operation{end}.instrument{1}.parameter{Pi}.reading(j) = newmission.operation{1}.instrument{1}.parameter{Pi}.reading;
-    mission.operation{end}.instrument{1}.parameter{Pi}.reading(j).sampleid = j;
+    mission.operation{end}.instrument{1}.parameter{Pi}.reading(j).sampleNumber = j;
   end
 
 else % NOTHING NEW

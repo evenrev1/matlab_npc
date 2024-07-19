@@ -45,7 +45,7 @@ function [filename,operationpart,instrumentpart] = npc_make_filename(mission,ope
 
 % This function requires hardcoding when data model of PhysChem changes!
 
-% Last updated: Fri Jul 12 18:36:45 2024 by jan.even.oeie.nilsen@hi.no
+% Last updated: Fri Jul 19 16:20:56 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(1,5,nargin));
 if nargin < 5 | isempty(instrumentNumber),instrumentNumber='';	end
@@ -58,70 +58,40 @@ if isempty(mission)
   return; 
 end
 
-% ------- Assume reduced input and use first of all: -----------------
+% ------- Check input and assign strings for parts of filename: -----------------
 
 % operationType is always mandatory.
 if isempty(operationType)
-  operationType = string(mission.operation{1}.operationType); 
-else
-  operationType = 'X';
+  %operationType = string(mission.operation{1}.operationType);   % Always mandatory
+  operationType = unique(string(getallfields(mission,'operationType')));
+  if numel(operationType)>1 || ~any(strlength(operationType)) % Not unique or missing field
+    operationType = "X";
+  end
 end
 % operationNumber is optional on input to PhysChem.
-if isempty(operationNumber) & ...
-      isfield(mission.operation{1},'operationNumber') && ~isempty(mission.operation{1}.operationNumber); 
-  operationNumber = string(mission.operation{1}.operationNumber);
-else
-  operationNumber = 'x';
+if isempty(operationNumber) %& isfield(mission.operation{1},'operationNumber') && ~isempty(mission.operation{1}.operationNumber); 
+  %operationNumber = string(mission.operation{1}.operationNumber);
+  operationNumber = unique(string(getallfields(mission,'operationNumber')));
+  if numel(operationNumber)>1 || ~any(strlength(operationNumber))  % Not unique or missing field
+    operationNumber = "x";
+  end
 end
 % instrumentType is always mandatory.
 if isempty(instrumentType)
-  instrumentType = string(mission.operation{1}.instrument{1}.instrumentType);  % Always mandatory
-else
-  instrumentType = 'X';
+  %instrumentType = string(mission.operation{1}.instrument{1}.instrumentType);  % Always mandatory
+  instrumentType = unique(string(getallfields(mission,'instrumentType')));
+  if numel(instrumentType)>1 || ~any(strlength(instrumentType)) % Not unique or missing field
+    instrumentType = "X";
+  end
 end
 % instrumentNumber is optional on input to PhysChem.
-if isempty(operationNumber) & ...
-      isfield(mission.operation{1}.instrument{1},'instrumentNumber') && ~isempty(mission.operation{1}.instrument{1}.instrumentNumber)
-  instrumentNumber = string(mission.operation{1}.instrument{1}.instrumentNumber);
-else
-  instrumentNumber = 'x';
+if isempty(instrumentNumber) %& isfield(mission.operation{1}.instrument{1},'instrumentNumber') && ~isempty(mission.operation{1}.instrument{1}.instrumentNumber)
+  %instrumentNumber = string(mission.operation{1}.instrument{1}.instrumentNumber);
+  instrumentNumber = unique(string(getallfields(mission,'instrumentNumber')));
+  if numel(instrumentNumber)>1 || ~any(strlength(instrumentNumber)) % Not unique or missing field
+    instrumentNumber = "x";
+  end
 end
-
-% % ---- Check inputs for relevance and use mission struct if not: -----
-%
-% instrumentNumber    = string(instrumentNumber);	
-% operationNumber = string(operationNumber);	
-% instrumentType  = string(instrumentType);	
-% operationType   = string(operationType);	
-%
-% % If empty or invalid operationType, use the first in mission:
-% operationTypes=string(getallfields(mission,'operationType'));
-% if ~ismember(operationTypes,operationType)
-%   operationType=operationTypes(1);
-% end
-%
-% % Now find which operations are of this type:
-% operationNumbers = string(egetfield(mission,'operationType',operationType,'operationNumber'));
-% % If empty or invalid operationNumber for this operationType, use the first valid:
-% if ~ismember(operationNumbers,operationNumber)
-%   operationNumber=operationNumbers(1);
-% end
-%
-% % Reduce struct to chosen operation:
-% s=mission.operation{str2num(operationNumber)};
-%
-% % If empty or invalid instrumentType, use the first in operation:
-% instrumentTypes=string(getallfields(s,'instrumentType'));
-% if ~ismember(instrumentTypes,instrumentType)
-%   instrumentType=instrumentTypes(1);
-% end
-%
-% % Now find which instruments in this operation that are of this type:
-% instrumentNumbers = string(egetfield(s,'instrumentType',instrumentType,'instrumentNumber'));
-% % If empty or invalid instrumentNumber for this instrumentType, use the first valid:
-% if ~ismember(instrumentNumbers,instrumentNumber)
-%   instrumentNumber=instrumentNumbers(1);
-% end
 
  
 % ----- Build filename (following the rules): ------------------------

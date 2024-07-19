@@ -46,7 +46,7 @@ function npc_init()
 % Uses toktnummer_regler.txt  
 % See also NPC WEBREAD XML2STRUCT
 
-% Last updated: Fri Jul 12 16:32:57 2024 by jan.even.oeie.nilsen@hi.no
+% Last updated: Fri Jul 19 17:35:23 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(0,0,nargin));
 
@@ -284,7 +284,7 @@ parameterFieldTypes = replace(parameterFieldTypes,'date-time','DATETIME');
 parameterFieldTypes = replace(parameterFieldTypes,'array','');
 % Sort out mandatory from optional fields by hardcoding (suboptimal, but at least it checks for content): 
 nominalMandatoryParameterFields = ["parameterNumber" "parameterCode" "ordinal" ...
-		    "units" "processingLevel"];
+		    "units" "processingLevel" "acquirementMethod"];
 [mandatoryParameterFields,IA] = intersect(parameterFields,nominalMandatoryParameterFields,'stable');
 if ~isempty(setdiff(mandatoryParameterFields,nominalMandatoryParameterFields))
   error('The data model (api Doc) does not contain the mandatory parameter fields specified for PhysChem!');

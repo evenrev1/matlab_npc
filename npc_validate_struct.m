@@ -60,7 +60,7 @@ function mission = npc_validate_struct(mission,opt,levlim,API)
 
 % This function requires hardcoding when data model of PhysChem changes!
 
-% Last updated: Fri Jul 12 17:58:12 2024 by jan.even.oeie.nilsen@hi.no
+% Last updated: Fri Jul 19 14:57:47 2024 by jan.even.oeie.nilsen@hi.no
 
 error(nargchk(1,4,nargin));
 if isempty(mission),	edisp('NPC_VALIDATE_STRUCT : Empty input!',4,4); return;	end
@@ -900,8 +900,6 @@ for O=1:ON
 	[nam,~,i]=intersect(string(nam'),allReadingNam,'stable');			% Indices for valid names present now
 	namtyp=allReadingNamTyp(i);							% The types of the valid, now present fields  
 	%%~strcmp(namtyp,""); nam=nam(ans); namtyp=nantyp(ans);				% Fields that cannot be checked are identified in NPC_INIT 
-
-	%keyboard
 	
 	% ASSIGN SOME MANDATORY FIELDS THAT COULD BE EMPTY ON DELIVERY:
 	% All parameter.reading.quality set to '0' if empty:

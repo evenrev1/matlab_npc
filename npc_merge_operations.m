@@ -14,8 +14,8 @@ function mission = npc_merge_operations(mission)
 % Currently for operations of featuretype 'profile' only.  
 %
 % All readings are organised into MxN matrices where M is the number of
-% sampleids (i.e. depths) and N is the number of operations. The
-% sampleid is used as index in the first dimension in order to match
+% sampleNumbers (i.e. depths) and N is the number of operations. The
+% sampleNumber is used as index in the first dimension in order to match
 % data in the rows of the matrices.  Numeric metadata are put into 1xN
 % vectors, while 'STR' and 'DATETIME' metadata are transposed to
 % charecter column vectors and collected into mxN matrices.
@@ -37,7 +37,7 @@ function mission = npc_merge_operations(mission)
 
 % This function requires hardcoding when data model of PhysChem changes!
 
-% Last updated: Thu Jul 11 12:52:22 2024 by jan.even.oeie.nilsen@hi.no
+% Last updated: Fri Jul 19 11:05:40 2024 by jan.even.oeie.nilsen@hi.no
 
 % SETTINGS:
 % Fields not to be moved up into matrices:
@@ -67,7 +67,7 @@ celvec = repmat({' '},1,ON);	% Base row cell to use in order to avoid double
 M=max(str2num(getallfields(mission,'sampleNumber'))); 
 nanmat = nans(M,ON);		% Base matrix to use in order to avoid zeros
 				% instead of NANs as fillvalue, using the
-				% largest sampleid as general size. 
+				% largest sampleNumber as general size. 
 
 % MERGE THE READINGS IN THE  MISSION FIRST:
 mission = npc_merge_readings(mission);
@@ -257,7 +257,7 @@ for O=1:ON
       % At first time use the full size NaN matrix as base, to avoid zero as fillvalue:
       if ~isfield(mission,[Iname,'_',Pname]), mission.([Iname,'_',Pname]) = nanmat; end % First time definition
       
-      % Expand the matrix with the operation and fill at the correct places with sampleid:
+      % Expand the matrix with the operation and fill at the correct places with sampleNumber:
       eval(['mission.',Iname,'_',Pname,'(r.sampleNumber,O)=r.value;'])
       
       % Quality is always 1x1 and char:
@@ -289,7 +289,7 @@ for i=1:numel(fienam)
     x=x';
    
   elseif isnumeric(x) & false	% Remove the superflous rows at bottom of reading matrices, where needed.
-				% NOT NECESSARY when sampleid governs size of all reading fields
+				% NOT NECESSARY when sampleNumber governs size of all reading fields
 				% and removal causes problems when there are actual NaNs in the data.
     [M,N]=size(x);
     if M>1
